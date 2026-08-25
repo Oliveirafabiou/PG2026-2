@@ -1,0 +1,40 @@
+# ---- Visual Studio ----
+.vs/
+*.user
+*.suo
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.VC.opendb
+
+# ---- Pastas de build ----
+x64/
+x86/
+Win32/
+Debug/
+Release/
+[Bb]uild/
+[Oo]bj/
+[Bb]in/
+
+# ---- NuGet / pacotes de bibliotecas (GLFW, GLEW, GLM baixados via NuGet) ----
+packages/
+*.nupkg
+
+# ---- Arquivos de projeto/solução gerados automaticamente ----
+*.aps
+*.ncb
+*.opendb
+*.VC.db
+
+# ---- Binários e libs compiladas ----
+*.exe
+*.dll
+*.lib
+*.pdb
+*.obj
+*.ilk
+
+# ---- Logs e temporários ----
+*.log
+*.tmp

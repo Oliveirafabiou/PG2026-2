@@ -126,8 +126,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\Lista 1\Ex1\main.cpp" />
-    <ClCompile Include="src\Project1.cpp" />
+    <ClCompile Include="src\Lista 1\Ex2\main2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

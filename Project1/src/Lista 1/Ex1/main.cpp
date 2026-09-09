@@ -51,7 +51,7 @@ int main(void) {
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
     glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Draw triangulos", NULL, NULL);
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Draw triangulos - 3 formas juntas", NULL, NULL);
     if (!window) {
         fprintf(stderr, "Failed to open GLFW window.\n");
         glfwTerminate();
@@ -60,7 +60,7 @@ int main(void) {
 
     glfwMakeContextCurrent(window);
 
-    // Inicialização da GLEW (essencial para carregar os ponteiros OpenGL no Core Profile)
+    // Inicialização da GLEW
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
         fprintf(stderr, "Failed to initialize GLEW\n");
@@ -70,9 +70,7 @@ int main(void) {
 
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
-    // ##############################################
-    // ##############     SHADERS    ################
-
+    // SHADERS
     std::string vert_sdr = R"str_limiter(
     #version 330 core
     
@@ -99,18 +97,15 @@ int main(void) {
 
     GLint colorLoc = glGetUniformLocation(programID, "tint");
     assert(colorLoc > -1);
-    glUniform4f(colorLoc, 1.0f, 0.0f, 0.0f, 1.0f);
 
-    // ##############################################
-    // Declaração dos vértices (Gravatinha de triângulos)
+    // Vértices (Gravatinha de triângulos)
     float vertices[] = {
-        // posicao          // Cor
-        -0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,  // vértice 1
-        -0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,  // vértice 2
-         0.0f,  0.0f, 0.0f,   1.0f, 0.0f, 0.0f,  // vértice 3
-         0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,  // vértice 4
-         0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,  // vértice 5
-         0.0f,  0.0f, 0.0f,   1.0f, 0.0f, 0.0f,  // vértice 6
+        -0.5f,  0.5f, 0.0f,
+        -0.5f, -0.5f, 0.0f,
+         0.0f,  0.0f, 0.0f,
+         0.5f, -0.5f, 0.0f,
+         0.5f,  0.5f, 0.0f,
+         0.0f,  0.0f, 0.0f,
     };
 
     unsigned int VAO, VBO;
@@ -121,25 +116,40 @@ int main(void) {
     glBindBuffer(GL_ARRAY_BUFFER, VBO);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // Atributo 0 = Posição
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
 
-    // Atributo 1 = Cor
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
-
     int numVertices = sizeof(vertices) / sizeof(float) / 3;
+
+    // Ajusta o tamanho dos pontos para ficarem visíveis junto com o desenho
+    glPointSize(8.0f);
+    // Ajusta a grossura das linhas de contorno (opcional, dependendo do suporte da placa)
+    glLineWidth(2.0f);
 
     // Loop principal
     while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
         glfwWindowShouldClose(window) == 0) {
 
+        glClearColor(0.1f, 0.1f, 0.1f, 1.0f); // Cor de fundo cinza escuro para contraste
         glClear(GL_COLOR_BUFFER_BIT);
 
         glUseProgram(programID);
         glBindVertexArray(VAO);
+
+        // 1. Desenha o interior preenchido (Cor: Vermelho)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        glUniform4f(colorLoc, 1.0f, 0.0f, 0.0f, 1.0f);
         glDrawArrays(GL_TRIANGLES, 0, numVertices);
+
+        // 2. Desenha o contorno por cima (Cor: Verde)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+        glUniform4f(colorLoc, 0.0f, 1.0f, 0.0f, 1.0f);
+        glDrawArrays(GL_TRIANGLES, 0, numVertices);
+
+        // 3. Desenha os vértices como pontos por cima de tudo (Cor: Azul)
+        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Garante modo normal para pontos
+        glUniform4f(colorLoc, 0.0f, 0.0f, 1.0f, 1.0f);
+        glDrawArrays(GL_POINTS, 0, numVertices);
 
         glfwSwapBuffers(window);
         glfwPollEvents();

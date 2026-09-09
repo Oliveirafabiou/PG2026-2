@@ -2,139 +2,153 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <vector>
+#include <cassert>
 
-#include <GL/glew.h> /* include GLEW and new version of GL on Windows */
-#include <GLFW/glfw3.h> /* GLFW helper library */
-
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <glm/glm.hpp>
 #include <math.h>
 
+// COMPILAÇÃO DOS SHADERS
+GLuint shaderProgram(std::string const& vs, std::string const& fs) {
+    char logStr[1024] = "";
 
+    GLuint vid = glCreateShader(GL_VERTEX_SHADER);
+    char const* vs_ptr = vs.c_str();
+    glShaderSource(vid, 1, &vs_ptr, NULL);
+    glCompileShader(vid);
 
+    GLuint fid = glCreateShader(GL_FRAGMENT_SHADER);
+    char const* fs_ptr = fs.c_str();
+    glShaderSource(fid, 1, &fs_ptr, NULL);
+    glCompileShader(fid);
 
-/*
- * Exercicio: desenhar 2 triangulos na tela com 4 modos:
- *   a) apenas preenchido      -> tecla 1
- *   b) apenas contorno        -> tecla 2
- *   c) apenas como pontos     -> tecla 3
- *   d) as 3 formas juntas     -> tecla 4
- */
+    GLuint program = glCreateProgram();
+    glAttachShader(program, vid);
+    glAttachShader(program, fid);
+    glLinkProgram(program);
 
-int main() {
-    // Initialise GLFW
-    glewExperimental = true; // Needed for core profile
-    if (!glfwInit())
-    {
+    glGetProgramInfoLog(program, 1023, NULL, logStr);
+    std::cout << logStr << std::endl;
+
+    glDetachShader(program, vid);
+    glDetachShader(program, fid);
+    glDeleteShader(vid);
+    glDeleteShader(fid);
+
+    return program;
+}
+
+int main(void) {
+    // Inicialização do GLFW
+    if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");
         return -1;
     }
 
-    glfwWindowHint(GLFW_SAMPLES, 4); // 4x antialiasing
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3); // We want OpenGL 3.3
+    glfwWindowHint(GLFW_SAMPLES, 4);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
     glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE); // We don't want the old OpenGL 
+    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    // Open a window and create its OpenGL context
-    GLFWwindow* window;
-    window = glfwCreateWindow(800, 600, "Tutorial 01", NULL, NULL);
-    if (window == NULL) {
-        fprintf(stderr, "Failed to open GLFW window. If you have an Intel GPU, they are not 3.3 compatible. Try the 2.1 version of the tutorials.\n");
+    GLFWwindow* window = glfwCreateWindow(800, 600, "Draw triangulos", NULL, NULL);
+    if (!window) {
+        fprintf(stderr, "Failed to open GLFW window.\n");
         glfwTerminate();
         return -1;
     }
-    glfwMakeContextCurrent(window); // Initialize GLEW
-    glewExperimental = true; // Needed in core profile
+
+    glfwMakeContextCurrent(window);
+
+    // Inicialização da GLEW (essencial para carregar os ponteiros OpenGL no Core Profile)
+    glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
         fprintf(stderr, "Failed to initialize GLEW\n");
+        glfwTerminate();
         return -1;
     }
 
-	//Small script to ensure the end of the program after key ESC is pressed
     glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
 
+    // ##############################################
+    // ##############     SHADERS    ################
 
-    static const GLfloat triangles[] = {
-        //triangle 0
-       -0.5f, 0.5f, 0.0f,
-       -0.5f, -0.5f, 0.0f,
-       0.0f,  0.0f, 0.0f,
-       //triangle 1
-       0.5f, 0.5f, 0.0f,
-       0.5f, -0.5f, 0.0f,
-       0.0f,  0.0f, 0.0f,
+    std::string vert_sdr = R"str_limiter(
+    #version 330 core
+    
+    layout (location = 0) in vec3 position;
+    
+    void main(){
+        gl_Position = vec4(position, 1.0);
+    }
+    )str_limiter";
+
+    std::string frag_sdr = R"limiter(
+    #version 330 core
+
+    uniform vec4 tint;
+    out vec4 result;
+
+    void main(){
+        result = tint;
+    }
+    )limiter";
+
+    GLuint programID = shaderProgram(vert_sdr, frag_sdr);
+    glUseProgram(programID);
+
+    GLint colorLoc = glGetUniformLocation(programID, "tint");
+    assert(colorLoc > -1);
+    glUniform4f(colorLoc, 1.0f, 0.0f, 0.0f, 1.0f);
+
+    // ##############################################
+    // Declaração dos vértices (Gravatinha de triângulos)
+    float vertices[] = {
+        // posicao          // Cor
+        -0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,  // vértice 1
+        -0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,  // vértice 2
+         0.0f,  0.0f, 0.0f,   1.0f, 0.0f, 0.0f,  // vértice 3
+         0.5f, -0.5f, 0.0f,   1.0f, 0.0f, 0.0f,  // vértice 4
+         0.5f,  0.5f, 0.0f,   1.0f, 0.0f, 0.0f,  // vértice 5
+         0.0f,  0.0f, 0.0f,   1.0f, 0.0f, 0.0f,  // vértice 6
     };
 
-    //static const GLfloat triangle1[] = {
-    //   0.5f, 0.5f, 0.0f,
-    //   0.5f, -0.5f, 0.0f,
-    //   0.0f,  0.0f, 0.0f,
-    //};
+    unsigned int VAO, VBO;
+    glGenVertexArrays(1, &VAO);
+    glBindVertexArray(VAO);
 
-	// This is our Vertex Array Object, which will store the state associated with our vertex buffer (VAO)
-    GLuint VAOTrianglesId;
-    glGenVertexArrays(1, &VAOTrianglesId);
-    glBindVertexArray(VAOTrianglesId);
+    glGenBuffers(1, &VBO);
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-    // This will identify our vertex buffer (VBO)
-    GLuint vertexbuffer;
-    // Generate 1 buffer, put the resulting identifier in vertexbuffer
-    glGenBuffers(1, &vertexbuffer);
+    // Atributo 0 = Posição
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+    glEnableVertexAttribArray(0);
 
-    // The following commands will talk about our 'vertexbuffer' buffer
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    // Give our vertices to OpenGL.
-    glBufferData(GL_ARRAY_BUFFER, sizeof(triangles), triangles, GL_STATIC_DRAW);
+    // Atributo 1 = Cor
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+    glEnableVertexAttribArray(1);
 
+    int numVertices = sizeof(vertices) / sizeof(float) / 3;
 
-    //Lines
-    std::vector<GLfloat> lines = 
-    {
-	   -0.5, 0.5, 0.0,
-       0.5, 0.5, 0.0,
-       0.5, 0.5, 0.0,
-	   0.5, -0.5, 0.0,
-    };
+    // Loop principal
+    while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
+        glfwWindowShouldClose(window) == 0) {
 
-	GLuint VAOLinesId;
-    glGenVertexArrays(1, &VAOLinesId);
-    glBindVertexArray(VAOLinesId);
-
-    glVertexAttribPointer(
-        0,          // attribute 0. No particular reason for 0, but must match the layout in the shader.
-        3,          // size
-        GL_FLOAT,   // type
-        GL_FALSE,   // normalized?
-        0,          // stride
-        (void*)0    // array buffer offset
-    );
-
-	GLuint linebuffer;
-	glGenBuffers(1, &linebuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, linebuffer);
-	glBufferData(GL_ARRAY_BUFFER, lines.size()*sizeof(GLfloat), lines.data(), GL_STATIC_DRAW);
-
-    do {
-        // Clear the screen. It's not mentioned before Tutorial 02, but it can cause flickering, so it's there nonetheless.
         glClear(GL_COLOR_BUFFER_BIT);
 
-        // 1st attribute buffer : vertices
-        glEnableVertexAttribArray(0);
-        glBindVertexArray(VAOLinesId);
-       
-        //Draw the triangle !
-        //glDrawArrays(GL_TRIANGLES, 0, 6); // Starting from vertex 0; 3 vertices total -> 1 triangle
-		glDrawArrays(GL_LINES, 0, lines.size()); // Starting from vertex 0; 3 vertices total -> 1 triangle
-        glDisableVertexAttribArray(0);
+        glUseProgram(programID);
+        glBindVertexArray(VAO);
+        glDrawArrays(GL_TRIANGLES, 0, numVertices);
 
-        // Swap buffers
         glfwSwapBuffers(window);
         glfwPollEvents();
+    }
 
-    } // Check if the ESC key was pressed or the window was closed
-    while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
-        glfwWindowShouldClose(window) == 0);
-
-
+    // Limpeza de recursos
+    glDeleteVertexArrays(1, &VAO);
+    glDeleteBuffers(1, &VBO);
+    glDeleteProgram(programID);
 
     glfwTerminate();
     return 0;

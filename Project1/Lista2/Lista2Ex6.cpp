@@ -1,8 +1,8 @@
 #include <iostream>
-#include "../../../core/window.h"
-#include "../../../core/shader.h"
-#include "../../../core/mesh.h"
-#include "../../../utils/geometryBuilder.cpp"
+#include "../core/window.h"
+#include "../core/shader.h"
+#include "../core/mesh.h"
+#include "../utils/geometryBuilder.cpp"
 
 #include <stdlib.h>
 #include <vector>
@@ -14,8 +14,8 @@
 #include <math.h>
 
 int main(void) {
-	// Inicialização da janela
-	Window window(800, 600, "Exercício 6 - Gravatinha de Triângulos");
+	// Inicializaï¿½ï¿½o da janela
+	Window window(800, 600, "Exercï¿½cio 6 - Gravatinha de Triï¿½ngulos");
 
     // SHADERS
     std::string vert_sdr = R"str_limiter(
@@ -39,13 +39,13 @@ int main(void) {
     }
     )limiter";
 
-	// Criação do shader
+	// Criaï¿½ï¿½o do shader
 	Shader shader(vert_sdr, frag_sdr);
 
-	// Criação da mesh com VAO e VBO
+	// Criaï¿½ï¿½o da mesh com VAO e VBO
 	Mesh mesh(gerarTriangulo(0.0f, 0.0f, 0.5f));
 
-    // Ajusta o tamanho dos pontos para ficarem visíveis junto com o desenho
+    // Ajusta o tamanho dos pontos para ficarem visï¿½veis junto com o desenho
     glPointSize(8.0f);
     // Ajusta a grossura das linhas de contorno 
     glLineWidth(2.0f);

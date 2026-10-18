@@ -9,7 +9,7 @@
 #include <glm/glm.hpp>
 #include <math.h>
 
-// COMPILAÇÃO DOS SHADERS
+// COMPILAï¿½ï¿½O DOS SHADERS
 GLuint shaderProgram(std::string const& vs, std::string const& fs) {
     char logStr[1024] = "";
 
@@ -39,8 +39,8 @@ GLuint shaderProgram(std::string const& vs, std::string const& fs) {
     return program;
 }
 
-int main(void) {
-    // Inicialização do GLFW
+int runLista1Ex1(void) {
+    // Inicializaï¿½ï¿½o do GLFW
     if (!glfwInit()) {
         fprintf(stderr, "Failed to initialize GLFW\n");
         return -1;
@@ -60,7 +60,7 @@ int main(void) {
 
     glfwMakeContextCurrent(window);
 
-    // Inicialização da GLEW
+    // Inicializaï¿½ï¿½o da GLEW
     glewExperimental = GL_TRUE;
     if (glewInit() != GLEW_OK) {
         fprintf(stderr, "Failed to initialize GLEW\n");
@@ -98,7 +98,7 @@ int main(void) {
     GLint colorLoc = glGetUniformLocation(programID, "tint");
     assert(colorLoc > -1);
 
-    // Vértices (Gravatinha de triângulos)
+    // Vï¿½rtices (Gravatinha de triï¿½ngulos)
     float vertices[] = {
         -0.5f,  0.5f, 0.0f,
         -0.5f, -0.5f, 0.0f,
@@ -121,7 +121,7 @@ int main(void) {
 
     int numVertices = sizeof(vertices) / sizeof(float) / 3;
 
-    // Ajusta o tamanho dos pontos para ficarem visíveis junto com o desenho
+    // Ajusta o tamanho dos pontos para ficarem visï¿½veis junto com o desenho
     glPointSize(8.0f);
     // Ajusta a grossura das linhas de contorno (opcional, dependendo do suporte da placa)
     glLineWidth(2.0f);
@@ -146,7 +146,7 @@ int main(void) {
         glUniform4f(colorLoc, 0.0f, 1.0f, 0.0f, 1.0f);
         glDrawArrays(GL_TRIANGLES, 0, numVertices);
 
-        // 3. Desenha os vértices como pontos por cima de tudo (Cor: Azul)
+        // 3. Desenha os vï¿½rtices como pontos por cima de tudo (Cor: Azul)
         glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Garante modo normal para pontos
         glUniform4f(colorLoc, 0.0f, 0.0f, 1.0f, 1.0f);
         glDrawArrays(GL_POINTS, 0, numVertices);

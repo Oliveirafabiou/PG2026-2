@@ -166,7 +166,7 @@ std::vector<float> gerarEspiral(float cx, float cy, float voltas, int numSegment
 // ==========================================
 // FUNCAO PRINCIPAL
 // ==========================================
-int main(void) {
+int runLista1Ex2(void) {
     if (!glfwInit()) return -1;
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -191,7 +191,7 @@ int main(void) {
     GLint colorLoc = glGetUniformLocation(programID, "tint");
 
     // ==========================================
-	// PROFE, É SÓ ESCOLHER UMA DAS GEOMETRIAS ABAIXO PARA DESENHAR, DESCOMENTANDO-A E COMENTANDO AS OUTRAS!!!
+	// PROFE, ï¿½ Sï¿½ ESCOLHER UMA DAS GEOMETRIAS ABAIXO PARA DESENHAR, DESCOMENTANDO-A E COMENTANDO AS OUTRAS!!!
     // ==========================================
 
      //Circulo base:
@@ -241,7 +241,7 @@ int main(void) {
 
         glBindVertexArray(VAO);
 
-        // Se for a espiral, é usado GL_LINE_STRIP; para o restante, é usado TRIANGLE_FAN ou TRIANGLES
+        // Se for a espiral, ï¿½ usado GL_LINE_STRIP; para o restante, ï¿½ usado TRIANGLE_FAN ou TRIANGLES
         if (modoDesenho == GL_LINE_STRIP) {
             glDrawArrays(GL_LINE_STRIP, 0, dados.size() / 3);
         }

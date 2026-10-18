@@ -1,32 +1,31 @@
 #ifndef MESH_H
 #define MESH_H
 
-#include <string>
-#include <GL/glew.h>
 #include <vector>
+#include <GL/glew.h>
 
 class Mesh {
 private:
-	GLuint vao_id; // Campo que armazena o ID do VAO (Vertex Array Object)
-	GLuint vbo_id; // Campo que armazena o ID do VBO (Vertex Buffer Object)
+    GLuint vao_id;    // ID do VAO (Vertex Array Object)
+    GLuint vbo_id;    // ID do VBO (Vertex Buffer Object)
+    int vertexCount;  // Quantidade total de vértices na malha
 
 public:
-	// Construtor: cria e inicializa o VAO e VBO com os vértices fornecidos
+    // Construtor: cria e inicializa VAO e VBO com o vetor de vértices fornecido
     Mesh(const std::vector<float>& vertices);
 
-    // Destrutor: limpa o VAO e VBO da GPU
+    // Destrutor: libera VAO e VBO da memória da GPU
     ~Mesh();
 
-	// Desenha o VAO na tela
+    // Desenha os vértices usando o modo fornecido (padrão: GL_TRIANGLES)
     void draw() const;
-	void draw(GLenum mode) const;
+    void draw(GLenum mode) const;
+
+    // Atualiza os dados do VBO dinamicamente caso a geometria mude em tempo de execução
+    void updateData(const std::vector<float>& vertices);
 
 private:
-
-    // Ativa o VAO para uso
     void bind() const;
-
-
 };
 
 #endif // MESH_H

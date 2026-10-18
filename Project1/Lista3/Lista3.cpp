@@ -1,36 +1,50 @@
 #include "Lista3.h"
+#include "../core/window.h"
+#include "../core/shader.h"
+
 #include <iostream>
 #include <vector>
 #include <cstdlib>
 #include <ctime>
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 namespace Lista3 {
 
-    // Estrutura para armazenar a cor RGB de um triângulo
     struct Cor {
         float r, g, b;
     };
 
-    // Variáveis globais/estáticas de controle da sessão
-    static std::vector<float> g_Vertices;   // Guarda as posições (x, y, z) de todos os vértices
-    static std::vector<Cor> g_CoresTriangulos; // Guarda a cor de cada triângulo (1 cor para cada 3 vértices)
-    static Cor g_CorAtual = { 1.0f, 0.0f, 0.0f }; // Cor padrão inicial (Vermelho)
-    static GLuint g_VBO = 0;
-    static GLuint g_VAO = 0;
+    // Estrutura para armazenar a animação e transformação individual de cada triângulo
+    struct TrianguloAnimado {
+        std::vector<float> verticesLocais; // 3 vértices normalizados em relação ao seu centro
+        Cor cor;
+        glm::vec2 pos;         // Posição do centro no espaço NDC (-1.0 a 1.0)
+        glm::vec2 vel;         // Velocidade de movimento
+        float angulo;          // Ângulo de rotação atual em graus
+        float velRotacao;      // Velocidade angular (graus/frame)
+    };
 
-    // Gera uma cor aleatória para o próximo triângulo
+    static std::vector<float> g_PontosPendentes; // Vértices do triângulo ainda em formação (cliques 1 e 2)
+    static std::vector<TrianguloAnimado> g_Triangulos;
+    static Cor g_CorAtual = { 1.0f, 0.0f, 0.0f };
+    static GLuint g_VAOPendentes = 0, g_VBOPendentes = 0;
+    static GLuint g_VAOTriangulo = 0, g_VBOTriangulo = 0;
+
     static Cor gerarCorAleatoria() {
-        Cor c;
-        c.r = (float)(rand() % 100) / 100.0f;
-        c.g = (float)(rand() % 100) / 100.0f;
-        c.b = (float)(rand() % 100) / 100.0f;
-        return c;
+        return {
+            (float)(rand() % 100) / 100.0f,
+            (float)(rand() % 100) / 100.0f,
+            (float)(rand() % 100) / 100.0f
+        };
     }
 
-    // Callback de evento de clique do mouse
+    static float gerarFloatAleatorio(float min, float max) {
+        return min + (float)rand() / ((float)RAND_MAX / (max - min));
+    }
+
     static void mouseButtonCallback(GLFWwindow* window, int button, int action, int mods) {
         if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_PRESS) {
             double xpos, ypos;
@@ -39,116 +53,95 @@ namespace Lista3 {
             int width, height;
             glfwGetWindowSize(window, &width, &height);
 
-            // Conversão de coordenadas da janela (Pixels) para NDC (-1.0 a 1.0)
+            // Conversão para NDC
             float xNDC = (2.0f * (float)xpos) / (float)width - 1.0f;
             float yNDC = 1.0f - (2.0f * (float)ypos) / (float)height;
 
-            // Adiciona o novo vértice
-            g_Vertices.push_back(xNDC);
-            g_Vertices.push_back(yNDC);
-            g_Vertices.push_back(0.0f);
+            g_PontosPendentes.push_back(xNDC);
+            g_PontosPendentes.push_back(yNDC);
+            g_PontosPendentes.push_back(0.0f);
 
-            std::cout << "Vértice criado (" << (g_Vertices.size() / 3) << "): ("
-                << xNDC << ", " << yNDC << ")\n";
-
-            // Atualiza a cor se estarmos no primeiro vértice de um novo triângulo
-            if ((g_Vertices.size() / 3) % 3 == 1 && g_Vertices.size() > 3) {
+            // Se o primeiro ponto de um novo triângulo foi clicado, sorteia uma nova cor
+            if (g_PontosPendentes.size() / 3 == 1 && !g_Triangulos.empty()) {
                 g_CorAtual = gerarCorAleatoria();
             }
 
-            // Se completou 3 vértices, registra a cor do novo triângulo
-            if ((g_Vertices.size() / 3) % 3 == 0) {
-                g_CoresTriangulos.push_back(g_CorAtual);
-                std::cout << "-> Novo triângulo criado com sucesso!\n";
-            }
+            // Atualiza os pontos pendentes na GPU
+            glBindBuffer(GL_ARRAY_BUFFER, g_VBOPendentes);
+            glBufferData(GL_ARRAY_BUFFER, g_PontosPendentes.size() * sizeof(float), g_PontosPendentes.data(), GL_DYNAMIC_DRAW);
 
-            // Atualiza os dados no VBO da GPU
-            glBindBuffer(GL_ARRAY_BUFFER, g_VBO);
-            glBufferData(GL_ARRAY_BUFFER, g_Vertices.size() * sizeof(float), g_Vertices.data(), GL_DYNAMIC_DRAW);
+            // Se completou 3 cliques, cria o triângulo animado
+            if (g_PontosPendentes.size() / 3 == 3) {
+                float cx = (g_PontosPendentes[0] + g_PontosPendentes[3] + g_PontosPendentes[6]) / 3.0f;
+                float cy = (g_PontosPendentes[1] + g_PontosPendentes[4] + g_PontosPendentes[7]) / 3.0f;
+
+                TrianguloAnimado tri;
+                tri.cor = g_CorAtual;
+                tri.pos = glm::vec2(cx, cy);
+                tri.angulo = 0.0f;
+
+                // Movimento bem mais lento e velocidade de rotação constante
+                tri.vel = glm::vec2(gerarFloatAleatorio(-0.0001f, 0.0001f), gerarFloatAleatorio(-0.001f, 0.001f));
+                tri.velRotacao = 0.05f; // Velocidade angular reduzida e fixa
+
+                for (int i = 0; i < 3; ++i) {
+                    tri.verticesLocais.push_back(g_PontosPendentes[i * 3] - cx);
+                    tri.verticesLocais.push_back(g_PontosPendentes[i * 3 + 1] - cy);
+                    tri.verticesLocais.push_back(0.0f);
+                }
+
+                g_Triangulos.push_back(tri);
+
+                g_PontosPendentes.clear();
+                glBindBuffer(GL_ARRAY_BUFFER, g_VBOPendentes);
+                glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
+            }
         }
     }
 
-    // Helper interno para compilar os shaders
-    static GLuint compileShaderHelper() {
+    void run() {
+        srand((unsigned int)time(NULL));
+        g_PontosPendentes.clear();
+        g_Triangulos.clear();
+        g_CorAtual = { 1.0f, 0.0f, 0.0f };
+
+        Window win(800, 600, "Lista 3 - Triângulos Animados com Clique");
+        GLFWwindow* window = win.getWindowId();
+
+        glfwSetMouseButtonCallback(window, mouseButtonCallback);
+
         std::string vert_sdr = "#version 330 core\n"
             "layout (location = 0) in vec3 position;\n"
-            "void main(){ gl_Position = vec4(position, 1.0); }";
+            "uniform mat4 transform;\n"
+            "void main(){ gl_Position = transform * vec4(position, 1.0); }";
+
         std::string frag_sdr = "#version 330 core\n"
             "uniform vec4 tint;\n"
             "out vec4 result;\n"
             "void main(){ result = tint; }";
 
-        GLuint vid = glCreateShader(GL_VERTEX_SHADER);
-        const char* vs_ptr = vert_sdr.c_str();
-        glShaderSource(vid, 1, &vs_ptr, NULL);
-        glCompileShader(vid);
+        Shader shader(vert_sdr, frag_sdr);
+        GLint transformLoc = glGetUniformLocation(shader.getId(), "transform");
 
-        GLuint fid = glCreateShader(GL_FRAGMENT_SHADER);
-        const char* fs_ptr = frag_sdr.c_str();
-        glShaderSource(fid, 1, &fs_ptr, NULL);
-        glCompileShader(fid);
-
-        GLuint program = glCreateProgram();
-        glAttachShader(program, vid);
-        glAttachShader(program, fid);
-        glLinkProgram(program);
-
-        glDeleteShader(vid);
-        glDeleteShader(fid);
-
-        return program;
-    }
-
-    void run() {
-        // Semente para geração de cores aleatórias
-        srand((unsigned int)time(NULL));
-
-        // Limpa dados acumulados de execuções anteriores
-        g_Vertices.clear();
-        g_CoresTriangulos.clear();
-        g_CorAtual = { 1.0f, 0.0f, 0.0f }; // Reseta para vermelho no primeiro triângulo
-
-        if (!glfwInit()) return;
-
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-        GLFWwindow* window = glfwCreateWindow(800, 600, "Lista 3 - Criar Triângulos com Clique", NULL, NULL);
-        if (!window) {
-            glfwTerminate();
-            return;
-        }
-
-        glfwMakeContextCurrent(window);
-        glewExperimental = GL_TRUE;
-        if (glewInit() != GLEW_OK) return;
-
-        // Registra a função callback de clique do mouse
-        glfwSetMouseButtonCallback(window, mouseButtonCallback);
-
-        GLuint programID = compileShaderHelper();
-        GLint colorLoc = glGetUniformLocation(programID, "tint");
-
-        // Configuração inicial do VAO/VBO
-        glGenVertexArrays(1, &g_VAO);
-        glBindVertexArray(g_VAO);
-
-        glGenBuffers(1, &g_VBO);
-        glBindBuffer(GL_ARRAY_BUFFER, g_VBO);
+        // VAO/VBO para pontos pendentes
+        glGenVertexArrays(1, &g_VAOPendentes);
+        glBindVertexArray(g_VAOPendentes);
+        glGenBuffers(1, &g_VBOPendentes);
+        glBindBuffer(GL_ARRAY_BUFFER, g_VBOPendentes);
         glBufferData(GL_ARRAY_BUFFER, 0, NULL, GL_DYNAMIC_DRAW);
-
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
         glEnableVertexAttribArray(0);
 
-        glPointSize(8.0f); // Aumenta os pontos para destacar vértices isolados
+        // VAO/VBO reutilizável para desenhar os triângulos
+        glGenVertexArrays(1, &g_VAOTriangulo);
+        glBindVertexArray(g_VAOTriangulo);
+        glGenBuffers(1, &g_VBOTriangulo);
+        glBindBuffer(GL_ARRAY_BUFFER, g_VBOTriangulo);
+        glBufferData(GL_ARRAY_BUFFER, 9 * sizeof(float), NULL, GL_DYNAMIC_DRAW);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
 
-        std::cout << "\n=============================================\n";
-        std::cout << "Instruções Lista 3:\n";
-        std::cout << "- Clique na janela para inserir vértices.\n";
-        std::cout << "- A cada 3 cliques, um triângulo será formado.\n";
-        std::cout << "- Cada novo triângulo terá uma cor diferente.\n";
-        std::cout << "=============================================\n";
+        glPointSize(8.0f);
 
         while (!glfwWindowShouldClose(window)) {
             if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
@@ -157,34 +150,53 @@ namespace Lista3 {
             glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
             glClear(GL_COLOR_BUFFER_BIT);
 
-            glUseProgram(programID);
-            glBindVertexArray(g_VAO);
+            shader.bind();
 
-            int totalVertices = (int)g_Vertices.size() / 3;
-            int numTriangulosCompletos = totalVertices / 3;
-            int verticesSobra = totalVertices % 3;
+            // 1. Desenha e atualiza cada triângulo animado
+            for (auto& tri : g_Triangulos) {
+                // Atualiza posição e rotação
+                tri.pos += tri.vel;
+                tri.angulo += tri.velRotacao;
 
-            // 1. Renderiza os triângulos já formados, cada um com sua cor
-            for (int i = 0; i < numTriangulosCompletos; ++i) {
-                Cor c = g_CoresTriangulos[i];
-                glUniform4f(colorLoc, c.r, c.g, c.b, 1.0f);
-                glDrawArrays(GL_TRIANGLES, i * 3, 3);
+                // Rebate nas bordas da tela (NDC -1.0 a 1.0)
+                if (tri.pos.x > 0.9f || tri.pos.x < -0.9f) tri.vel.x *= -1.0f;
+                if (tri.pos.y > 0.9f || tri.pos.y < -0.9f) tri.vel.y *= -1.0f;
+
+                // Monta a matriz de transformação: Matriz = Translação * Rotação
+                glm::mat4 transform = glm::mat4(1.0f);
+                transform = glm::translate(transform, glm::vec3(tri.pos.x, tri.pos.y, 0.0f));
+                transform = glm::rotate(transform, glm::radians(tri.angulo), glm::vec3(0.0f, 0.0f, 1.0f));
+
+                glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(transform));
+                shader.bindUniform4f("tint", tri.cor.r, tri.cor.g, tri.cor.b, 1.0f);
+
+                // Carrega os vértices locais do triângulo e desenha
+                glBindVertexArray(g_VAOTriangulo);
+                glBindBuffer(GL_ARRAY_BUFFER, g_VBOTriangulo);
+                glBufferSubData(GL_ARRAY_BUFFER, 0, tri.verticesLocais.size() * sizeof(float), tri.verticesLocais.data());
+                glDrawArrays(GL_TRIANGLES, 0, 3);
             }
 
-            // 2. Desenha os vértices pendentes (1 ou 2 cliques) como pontos na cor do próximo triângulo
-            if (verticesSobra > 0) {
-                glUniform4f(colorLoc, g_CorAtual.r, g_CorAtual.g, g_CorAtual.b, 1.0f);
-                glDrawArrays(GL_POINTS, numTriangulosCompletos * 3, verticesSobra);
+            // 2. Desenha os pontos pendentes do próximo triângulo (sem animação/transformação)
+            if (!g_PontosPendentes.empty()) {
+                glm::mat4 identity = glm::mat4(1.0f);
+                glUniformMatrix4fv(transformLoc, 1, GL_FALSE, glm::value_ptr(identity));
+                shader.bindUniform4f("tint", g_CorAtual.r, g_CorAtual.g, g_CorAtual.b, 1.0f);
+
+                glBindVertexArray(g_VAOPendentes);
+                glDrawArrays(GL_POINTS, 0, (GLsizei)(g_PontosPendentes.size() / 3));
             }
+
+            shader.unbind();
 
             glfwSwapBuffers(window);
             glfwPollEvents();
         }
 
-        glDeleteVertexArrays(1, &g_VAO);
-        glDeleteBuffers(1, &g_VBO);
-        glDeleteProgram(programID);
-        glfwTerminate();
+        glDeleteVertexArrays(1, &g_VAOPendentes);
+        glDeleteBuffers(1, &g_VBOPendentes);
+        glDeleteVertexArrays(1, &g_VAOTriangulo);
+        glDeleteBuffers(1, &g_VBOTriangulo);
     }
 
 } // namespace Lista3

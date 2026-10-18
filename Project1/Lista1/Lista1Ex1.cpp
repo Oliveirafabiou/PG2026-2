@@ -9,69 +9,73 @@
 #include <glm/glm.hpp>
 #include <math.h>
 
-// COMPILA��O DOS SHADERS
-GLuint shaderProgram(std::string const& vs, std::string const& fs) {
-    char logStr[1024] = "";
+#include "Lista1.h"
 
-    GLuint vid = glCreateShader(GL_VERTEX_SHADER);
-    char const* vs_ptr = vs.c_str();
-    glShaderSource(vid, 1, &vs_ptr, NULL);
-    glCompileShader(vid);
+namespace Lista1 {
 
-    GLuint fid = glCreateShader(GL_FRAGMENT_SHADER);
-    char const* fs_ptr = fs.c_str();
-    glShaderSource(fid, 1, &fs_ptr, NULL);
-    glCompileShader(fid);
+    // static limita o escopo da função a este arquivo, resolvendo a redefinição de shaderProgram
+    static GLuint shaderProgram(std::string const& vs, std::string const& fs) {
+        char logStr[1024] = "";
 
-    GLuint program = glCreateProgram();
-    glAttachShader(program, vid);
-    glAttachShader(program, fid);
-    glLinkProgram(program);
+        GLuint vid = glCreateShader(GL_VERTEX_SHADER);
+        char const* vs_ptr = vs.c_str();
+        glShaderSource(vid, 1, &vs_ptr, NULL);
+        glCompileShader(vid);
 
-    glGetProgramInfoLog(program, 1023, NULL, logStr);
-    std::cout << logStr << std::endl;
+        GLuint fid = glCreateShader(GL_FRAGMENT_SHADER);
+        char const* fs_ptr = fs.c_str();
+        glShaderSource(fid, 1, &fs_ptr, NULL);
+        glCompileShader(fid);
 
-    glDetachShader(program, vid);
-    glDetachShader(program, fid);
-    glDeleteShader(vid);
-    glDeleteShader(fid);
+        GLuint program = glCreateProgram();
+        glAttachShader(program, vid);
+        glAttachShader(program, fid);
+        glLinkProgram(program);
 
-    return program;
-}
+        glGetProgramInfoLog(program, 1023, NULL, logStr);
+        std::cout << logStr << std::endl;
 
-int runLista1Ex1(void) {
-    // Inicializa��o do GLFW
-    if (!glfwInit()) {
-        fprintf(stderr, "Failed to initialize GLFW\n");
-        return -1;
+        glDetachShader(program, vid);
+        glDetachShader(program, fid);
+        glDeleteShader(vid);
+        glDeleteShader(fid);
+
+        return program;
     }
 
-    glfwWindowHint(GLFW_SAMPLES, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+    int runLista1Ex1(void) {
+        // Inicializa��o do GLFW
+        if (!glfwInit()) {
+            fprintf(stderr, "Failed to initialize GLFW\n");
+            return -1;
+        }
 
-    GLFWwindow* window = glfwCreateWindow(800, 600, "Draw triangulos - 3 formas juntas", NULL, NULL);
-    if (!window) {
-        fprintf(stderr, "Failed to open GLFW window.\n");
-        glfwTerminate();
-        return -1;
-    }
+        glfwWindowHint(GLFW_SAMPLES, 4);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-    glfwMakeContextCurrent(window);
+        GLFWwindow* window = glfwCreateWindow(800, 600, "Draw triangulos - 3 formas juntas", NULL, NULL);
+        if (!window) {
+            fprintf(stderr, "Failed to open GLFW window.\n");
+            glfwTerminate();
+            return -1;
+        }
 
-    // Inicializa��o da GLEW
-    glewExperimental = GL_TRUE;
-    if (glewInit() != GLEW_OK) {
-        fprintf(stderr, "Failed to initialize GLEW\n");
-        glfwTerminate();
-        return -1;
-    }
+        glfwMakeContextCurrent(window);
 
-    glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+        // Inicializa��o da GLEW
+        glewExperimental = GL_TRUE;
+        if (glewInit() != GLEW_OK) {
+            fprintf(stderr, "Failed to initialize GLEW\n");
+            glfwTerminate();
+            return -1;
+        }
 
-    // SHADERS
-    std::string vert_sdr = R"str_limiter(
+        glfwSetInputMode(window, GLFW_STICKY_KEYS, GL_TRUE);
+
+        // SHADERS
+        std::string vert_sdr = R"str_limiter(
     #version 330 core
     
     layout (location = 0) in vec3 position;
@@ -81,7 +85,7 @@ int runLista1Ex1(void) {
     }
     )str_limiter";
 
-    std::string frag_sdr = R"limiter(
+        std::string frag_sdr = R"limiter(
     #version 330 core
 
     uniform vec4 tint;
@@ -92,74 +96,75 @@ int runLista1Ex1(void) {
     }
     )limiter";
 
-    GLuint programID = shaderProgram(vert_sdr, frag_sdr);
-    glUseProgram(programID);
-
-    GLint colorLoc = glGetUniformLocation(programID, "tint");
-    assert(colorLoc > -1);
-
-    // V�rtices (Gravatinha de tri�ngulos)
-    float vertices[] = {
-        -0.5f,  0.5f, 0.0f,
-        -0.5f, -0.5f, 0.0f,
-         0.0f,  0.0f, 0.0f,
-         0.5f, -0.5f, 0.0f,
-         0.5f,  0.5f, 0.0f,
-         0.0f,  0.0f, 0.0f,
-    };
-
-    unsigned int VAO, VBO;
-    glGenVertexArrays(1, &VAO);
-    glBindVertexArray(VAO);
-
-    glGenBuffers(1, &VBO);
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-    glEnableVertexAttribArray(0);
-
-    int numVertices = sizeof(vertices) / sizeof(float) / 3;
-
-    // Ajusta o tamanho dos pontos para ficarem vis�veis junto com o desenho
-    glPointSize(8.0f);
-    // Ajusta a grossura das linhas de contorno (opcional, dependendo do suporte da placa)
-    glLineWidth(2.0f);
-
-    // Loop principal
-    while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
-        glfwWindowShouldClose(window) == 0) {
-
-        glClearColor(0.1f, 0.1f, 0.1f, 1.0f); // Cor de fundo cinza escuro para contraste
-        glClear(GL_COLOR_BUFFER_BIT);
-
+        GLuint programID = shaderProgram(vert_sdr, frag_sdr);
         glUseProgram(programID);
+
+        GLint colorLoc = glGetUniformLocation(programID, "tint");
+        assert(colorLoc > -1);
+
+        // V�rtices (Gravatinha de tri�ngulos)
+        float vertices[] = {
+            -0.5f,  0.5f, 0.0f,
+            -0.5f, -0.5f, 0.0f,
+             0.0f,  0.0f, 0.0f,
+             0.5f, -0.5f, 0.0f,
+             0.5f,  0.5f, 0.0f,
+             0.0f,  0.0f, 0.0f,
+        };
+
+        unsigned int VAO, VBO;
+        glGenVertexArrays(1, &VAO);
         glBindVertexArray(VAO);
 
-        // 1. Desenha o interior preenchido (Cor: Vermelho)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-        glUniform4f(colorLoc, 1.0f, 0.0f, 0.0f, 1.0f);
-        glDrawArrays(GL_TRIANGLES, 0, numVertices);
+        glGenBuffers(1, &VBO);
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-        // 2. Desenha o contorno por cima (Cor: Verde)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-        glUniform4f(colorLoc, 0.0f, 1.0f, 0.0f, 1.0f);
-        glDrawArrays(GL_TRIANGLES, 0, numVertices);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(0);
 
-        // 3. Desenha os v�rtices como pontos por cima de tudo (Cor: Azul)
-        glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Garante modo normal para pontos
-        glUniform4f(colorLoc, 0.0f, 0.0f, 1.0f, 1.0f);
-        glDrawArrays(GL_POINTS, 0, numVertices);
+        int numVertices = sizeof(vertices) / sizeof(float) / 3;
 
-        glfwSwapBuffers(window);
-        glfwPollEvents();
+        // Ajusta o tamanho dos pontos para ficarem vis�veis junto com o desenho
+        glPointSize(8.0f);
+        // Ajusta a grossura das linhas de contorno (opcional, dependendo do suporte da placa)
+        glLineWidth(2.0f);
+
+        // Loop principal
+        while (glfwGetKey(window, GLFW_KEY_ESCAPE) != GLFW_PRESS &&
+            glfwWindowShouldClose(window) == 0) {
+
+            glClearColor(0.1f, 0.1f, 0.1f, 1.0f); // Cor de fundo cinza escuro para contraste
+            glClear(GL_COLOR_BUFFER_BIT);
+
+            glUseProgram(programID);
+            glBindVertexArray(VAO);
+
+            // 1. Desenha o interior preenchido (Cor: Vermelho)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+            glUniform4f(colorLoc, 1.0f, 0.0f, 0.0f, 1.0f);
+            glDrawArrays(GL_TRIANGLES, 0, numVertices);
+
+            // 2. Desenha o contorno por cima (Cor: Verde)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            glUniform4f(colorLoc, 0.0f, 1.0f, 0.0f, 1.0f);
+            glDrawArrays(GL_TRIANGLES, 0, numVertices);
+
+            // 3. Desenha os v�rtices como pontos por cima de tudo (Cor: Azul)
+            glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); // Garante modo normal para pontos
+            glUniform4f(colorLoc, 0.0f, 0.0f, 1.0f, 1.0f);
+            glDrawArrays(GL_POINTS, 0, numVertices);
+
+            glfwSwapBuffers(window);
+            glfwPollEvents();
+        }
+
+        // Limpeza de recursos
+        glDeleteVertexArrays(1, &VAO);
+        glDeleteBuffers(1, &VBO);
+        glDeleteProgram(programID);
+
+        glfwTerminate();
+        return 0;
     }
-
-    // Limpeza de recursos
-    glDeleteVertexArrays(1, &VAO);
-    glDeleteBuffers(1, &VBO);
-    glDeleteProgram(programID);
-
-    glfwTerminate();
-    return 0;
 }

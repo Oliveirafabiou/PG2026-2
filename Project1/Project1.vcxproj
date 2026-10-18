@@ -133,11 +133,22 @@
     <ClCompile Include="core\mesh.h" />
     <ClCompile Include="core\shader.cpp" />
     <ClCompile Include="core\window.cpp" />
-    <ClCompile Include="src\Lista 2\Ex6\main.cpp" />
+    <ClCompile Include="Lista1\Lista1.cpp" />
+    <ClCompile Include="Lista1\Lista1Ex1.cpp" />
+    <ClCompile Include="Lista1\Lista1Ex2.cpp" />
+    <ClCompile Include="Lista2\Lista2.cpp" />
+    <ClCompile Include="Lista3\Lista3.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="core\shader.h" />
     <ClInclude Include="core\window.h" />
+    <ClInclude Include="Lista1\Lista1.h" />
+    <ClInclude Include="Lista2\Lista2.h" />
+    <ClInclude Include="Lista3\Lista3.h" />
+    <ClInclude Include="stb_image.h" />
+    <ClInclude Include="texture.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

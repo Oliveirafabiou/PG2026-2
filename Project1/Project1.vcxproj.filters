@@ -13,16 +13,78 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Arquivos de Cabeçalho\core">
+      <UniqueIdentifier>{09153792-6dde-4a94-b646-008679b17fb2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arquivos de Cabeçalho\lists">
+      <UniqueIdentifier>{b3594cdf-8506-48ef-8157-f95be04cdaa1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arquivos de Origem\core">
+      <UniqueIdentifier>{694997c9-d5df-4451-8142-b31bed34750b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Arquivos de Origem\lists">
+      <UniqueIdentifier>{d2699dd2-1fa1-40fa-8621-d274cc64516e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Lista 2\Ex1\main.cpp">
+    <ClCompile Include="main.cpp">
       <Filter>Arquivos de Origem</Filter>
     </ClCompile>
-    <ClCompile Include="src\Lista 2\Ex5\main.cpp">
-      <Filter>Arquivos de Origem</Filter>
+    <ClCompile Include="core\mesh.h">
+      <Filter>Arquivos de Cabeçalho\core</Filter>
     </ClCompile>
+    <ClCompile Include="core\mesh.cpp">
+      <Filter>Arquivos de Origem\core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\shader.cpp">
+      <Filter>Arquivos de Origem\core</Filter>
+    </ClCompile>
+    <ClCompile Include="texture.cpp">
+      <Filter>Arquivos de Origem\core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\window.cpp">
+      <Filter>Arquivos de Origem\core</Filter>
+    </ClCompile>
+    <ClCompile Include="Lista3\Lista3.cpp">
+      <Filter>Arquivos de Origem\lists</Filter>
+    </ClCompile>
+    <ClCompile Include="Lista2\Lista2.cpp">
+      <Filter>Arquivos de Origem\lists</Filter>
+    </ClCompile>
+    <ClCompile Include="Lista1\Lista1.cpp">
+      <Filter>Arquivos de Origem\lists</Filter>
+    </ClCompile>
+    <ClCompile Include="Lista1\Lista1Ex1.cpp">
+      <Filter>Arquivos de Origem\lists</Filter>
+    </ClCompile>
+    <ClCompile Include="Lista1\Lista1Ex2.cpp">
+      <Filter>Arquivos de Origem\lists</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="core\shader.h">
+      <Filter>Arquivos de Cabeçalho\core</Filter>
+    </ClInclude>
+    <ClInclude Include="stb_image.h">
+      <Filter>Arquivos de Cabeçalho\core</Filter>
+    </ClInclude>
+    <ClInclude Include="texture.h">
+      <Filter>Arquivos de Cabeçalho\core</Filter>
+    </ClInclude>
+    <ClInclude Include="core\window.h">
+      <Filter>Arquivos de Cabeçalho\core</Filter>
+    </ClInclude>
+    <ClInclude Include="Lista1\Lista1.h">
+      <Filter>Arquivos de Cabeçalho\lists</Filter>
+    </ClInclude>
+    <ClInclude Include="Lista2\Lista2.h">
+      <Filter>Arquivos de Cabeçalho\lists</Filter>
+    </ClInclude>
+    <ClInclude Include="Lista3\Lista3.h">
+      <Filter>Arquivos de Cabeçalho\lists</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -45,8 +45,19 @@ void renderizarQuadranteUnico() {
     std::cout << "2. Superior Esquerdo (Q2)\n";
     std::cout << "3. Inferior Esquerdo (Q3)\n";
     std::cout << "4. Inferior Direito (Q4)\n";
+    std::cout << "5. Voltar ao Menu Anterior\n";
     std::cout << "Opção: ";
     std::cin >> quadrante;
+
+    // Retorna para o submenu da Lista 2 sem abrir a janela do GLFW
+    if (quadrante == 5) {
+        return;
+    }
+
+    if (quadrante < 1 || quadrante > 4) {
+        std::cout << "Opção inválida! Retornando ao menu...\n";
+        return;
+    }
 
     if (!glfwInit()) return;
 
@@ -95,11 +106,10 @@ void renderizarQuadranteUnico() {
         // Define a Viewport do quadrante selecionado (Largura 400, Altura 300)
         int vx = 0, vy = 0;
         switch (quadrante) {
-            case 1: vx = 400; vy = 300; break; // Q1: Superior Direito
-            case 2: vx = 0;   vy = 300; break; // Q2: Superior Esquerdo
-            case 3: vx = 0;   vy = 0;   break; // Q3: Inferior Esquerdo
-            case 4: vx = 400; vy = 0;   break; // Q4: Inferior Direito
-            default: vx = 0;  vy = 300; break;
+        case 1: vx = 400; vy = 300; break; // Q1: Superior Direito
+        case 2: vx = 0;   vy = 300; break; // Q2: Superior Esquerdo
+        case 3: vx = 0;   vy = 0;   break; // Q3: Inferior Esquerdo
+        case 4: vx = 400; vy = 0;   break; // Q4: Inferior Direito
         }
 
         glViewport(vx, vy, 400, 300);
